@@ -1,19 +1,20 @@
-FROM python:3.11-slim
+FROM python:3.13-slim
+
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 WORKDIR /app
 
-# Install uv
+# Copy dependency manifest first for better layer caching
+COPY pyproject.toml /app/
+RUN uv sync --no-dev
 
-RUN pip install uv
+# Copy the rest of the source
+COPY . /app
+RUN uv sync --no-dev
 
-# Copy project files
-
-COPY . .
-
-# Install dependencies from pyproject.toml
-
-RUN uv sync
+ENV PYTHONUNBUFFERED=1
 
 EXPOSE 8080
 
-CMD ["uv", "run", "python", "main.py"]
+CMD ["uv", "run", "main.py"]
